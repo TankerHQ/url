@@ -10,80 +10,30 @@
 
 cmake_minimum_required(VERSION 3.8...3.16)
 
+
 set(BOOST_URL_VERSION 2)
-if(BOOST_SUPERPROJECT_VERSION)
-    set(BOOST_URL_VERSION ${BOOST_SUPERPROJECT_VERSION})
-endif()
 
 project(boost_url VERSION "${BOOST_URL_VERSION}" LANGUAGES CXX)
+include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
 
-set(BOOST_URL_IS_ROOT OFF)
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    set(BOOST_URL_IS_ROOT ON)
-endif()
+option(BOOST_URL_INSTALL "Install boost::url files" ON)
+option(BOOST_URL_BUILD_TESTS "Build boost::url tests" ON)
+option(BOOST_URL_USE_STD_STRING_VIEW "boost::url url uses std::string_view" ON)
 
-if(BOOST_URL_IS_ROOT)
-    include(CTest)
-endif()
-if(NOT BOOST_SUPERPROJECT_VERSION)
-    option(BOOST_URL_INSTALL "Install boost::url files" ON)
-    option(BOOST_URL_BUILD_TESTS "Build boost::url tests" ${BUILD_TESTING})
-else()
-    set(BOOST_URL_BUILD_TESTS ${BUILD_TESTING})
-endif()
 
 
 include(GNUInstallDirs)
-if(BOOST_URL_IS_ROOT)
-    #
-    # Building inside Boost tree, but as a separate project e.g. on Travis or
-    # other CI, or when producing Visual Studio Solution and Projects. This is
-    # when we have to add dependencies to the project manually.
-    foreach(lib
-        # direct dependencies
-        align
-        assert
-        config
-        container
-        exception
-        mp11
-        optional
-        system
-        throw_exception
-        utility
-
-        # indirect dependencies
-        container_hash
-        core
-        detail
-        integer
-        intrusive
-        io
-        move
-        predef
-        preprocessor
-        smart_ptr
-        static_assert
-        tuple
-        type_traits
-        winapi
-    )
-        add_subdirectory(../${lib} libs/${lib} EXCLUDE_FROM_ALL)
-        set(target boost_${lib})
-        if(TARGET ${target})
-          get_target_property(lib_type ${target} TYPE)
-          if(NOT ${lib_type} STREQUAL INTERFACE_LIBRARY)
-            set_property(TARGET ${target} PROPERTY FOLDER _deps/${lib})
-          endif()
-        endif()
-    endforeach()
-endif()
-
+find_package(Boost)
 
 function(boost_url_setup_properties target)
     target_compile_features(${target} PUBLIC cxx_constexpr)
     target_compile_definitions(${target} PUBLIC BOOST_URL_NO_LIB=1)
+
+    if(BOOST_URL_USE_STD_STRING_VIEW)
+        target_compile_definitions(${target} PUBLIC BOOST_URL_USE_STD_STRING_VIEW)
+        target_compile_features(${target} PUBLIC cxx_std_17)
+    endif()
 
     if(BOOST_SUPERPROJECT_VERSION)
         target_include_directories(${target} PUBLIC "${PROJECT_SOURCE_DIR}/include")
@@ -97,15 +47,16 @@ function(boost_url_setup_properties target)
 
     target_link_libraries(${target}
         PUBLIC
-            Boost::align
-            Boost::assert
-            Boost::config
+            #Boost::align
+            #Boost::assert
+            #Boost::config
             Boost::exception
-            Boost::mp11
-            Boost::optional
+            #Boost::mp11
+            #Boost::optional
             Boost::system
-            Boost::throw_exception
-            Boost::utility
+            Boost::headers
+            #Boost::throw_exception
+            #Boost::utility
     )
 endfunction()
 
